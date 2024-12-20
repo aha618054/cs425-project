@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # Spring Boot application
+  spring-web-app:
+    build:
+      context: ./back-end
+    container_name: spring-web-app
+    ports:
+      - "8080:8080"   # Expose port 8080 for the Spring app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/cs425  # MySQL host and port
+      SPRING_DATASOURCE_USERNAME: root  # MySQL root username
+      SPRING_DATASOURCE_PASSWORD: test1234  # MySQL root password
+    depends_on:
+      - mysql
+    networks:
+      - spring-network
+
+  # MySQL database
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "test1234"
+      MYSQL_DATABASE: cs425
+    ports:
+      - "3307:3306"  # Expose MySQL on host port 3307, container port remains 3306
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - spring-network
+
+  # React.js application
+  user-app:
+    build:
+      context: ./front-end  # Path to your React app folder
+    container_name: user-app
+    ports:
+      - "3000:3000"  # Map container port 3000 to host port 3001
+    networks:
+      - spring-network
+
+  # React.js application
+  admin-app:
+    build:
+      context: ./admin-panel  # Path to your React app folder
+    container_name: admin-app
+    ports:
+      - "3001:3001"  # Map container port 3000 to host port 3001
+    networks:
+      - spring-network
+
+  # Portainer (Web UI to manage Docker)
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    ports:
+      - "9000:9000"  # Expose Portainer UI on port 9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Access to Docker socket
+      - portainer_data:/data  # Store Portainer data persistently
+    networks:
+      - spring-network
+
+networks:
+  spring-network:
+    driver: bridge
+
+# Volumes for persistent data
+volumes:
+  mysql_data:
+  portainer_data:
